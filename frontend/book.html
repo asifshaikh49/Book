@@ -81,7 +81,7 @@
   // Display user name from localStorage
   const user = JSON.parse(localStorage.getItem('userData'));
   if(user){
-    document.getElementById("welcomeText").innerText = `Welcome ${user.name}! Enjoy reading 📖`;
+    document.getElementById("welcomeText").innerText = `Welcome ${user.fullName}! Enjoy reading 📖`;
   }
 
   // PDF.js setup
