@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meri Book Reader</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin:0;
+    padding:0;
+    background:#f8f3e7;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+
+  h2#welcomeText {
+    text-align:center;
+    color:#d35400;
+    padding:20px 10px 10px 10px;
+    font-size:1.4rem;
+  }
+
+  #pdf-container {
+    flex:1;
+    width:90%;
+    max-width:800px;
+    margin:0 auto;
+    border:2px solid #d35400;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    overflow:hidden;
+    position:relative;
+  }
+
+  canvas { width:100%; display:block; margin:0 auto; }
+
+  .btns {
+    width:100%;
+    position:relative;
+    margin-top:10px;
+    height:60px;
+  }
+
+  button {
+    padding:10px 20px;
+    border:none;
+    background:#e67e22;
+    color:#fff;
+    border-radius:6px;
+    cursor:pointer;
+    position:absolute;
+    bottom:10px;
+  }
+
+  button:hover { background:#d35400; }
+
+  #prev { left:10px; }
+  #next { right:10px; }
+
+  @media(max-width:600px){
+    h2#welcomeText { font-size:1.2rem; padding:15px 5px; }
+    button { padding:8px 16px; font-size:0.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<h2 id="welcomeText">Welcome to MeriBook 📖</h2>
+
+<div id="pdf-container"></div>
+
+<div class="btns">
+  <button id="prev">⬅️ Previous</button>
+  <button id="next">Next ➡️</button>
+</div>
+
+<script>
+  // Display user name from localStorage
+  const user = JSON.parse(localStorage.getItem('userData'));
+  if(user){
+    document.getElementById("welcomeText").innerText = `Welcome ${user.name}! Enjoy reading 📖`;
+  }
+
+  // PDF.js setup
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js";
+
+  const pdfList = [
+    "book-pages/Asif_Shaikh.pdf",
+    "book-pages/Offer_Letter_Asif.pdf"
+  ];
+
+  let currentPDF = 0;
+  let currentPage = 1;
+  let pdfDoc = null;
+  const container = document.getElementById("pdf-container");
+
+  // Load PDF
+  async function loadPDF() {
+    pdfDoc = await pdfjsLib.getDocument(pdfList[currentPDF]).promise;
+    currentPage = 1;
+    renderPage(currentPage);
+  }
+
+  // Render single page responsive
+  async function renderPage(pageNum){
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({scale:1});
+    const containerWidth = container.clientWidth;
+    const scale = containerWidth / viewport.width;
+    const scaledViewport = page.getViewport({scale: scale});
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = scaledViewport.width;
+    canvas.height = scaledViewport.height;
+
+    container.innerHTML = "";
+    container.appendChild(canvas);
+    await page.render({canvasContext: ctx, viewport: scaledViewport}).promise;
+  }
+
+  // Previous button
+  document.getElementById("prev").addEventListener("click", ()=>{
+    if(currentPage > 1){
+      currentPage--;
+      renderPage(currentPage);
+    } else if(currentPDF > 0){
+      currentPDF--;
+      loadPDF();
+    }
+  });
+
+  // Next button
+  document.getElementById("next").addEventListener("click", ()=>{
+    if(currentPage < pdfDoc.numPages){
+      currentPage++;
+      renderPage(currentPage);
+    } else if(currentPDF < pdfList.length - 1){
+      currentPDF++;
+      loadPDF();
+    } else {
+      alert("🎉 You've reached the end of the book!");
+    }
+  });
+
+  // Initial load
+  loadPDF();
+
+  // Responsive resize
+  window.addEventListener("resize", ()=> renderPage(currentPage));
+</script>
+
+</body>
+</html>
